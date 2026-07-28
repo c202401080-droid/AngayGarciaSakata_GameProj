@@ -11,6 +11,7 @@ TagManager:
   - Camera
   - LightOn
   - Minigame1
+  - Minigame2
   layers:
   - Default
   - TransparentFX

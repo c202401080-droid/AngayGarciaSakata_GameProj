@@ -9,23 +9,66 @@ public class CreatureAI : MonoBehaviour
     [SerializeField] private float checkInterval = 8f;
     [SerializeField] private Submarine submarineHP;
     [SerializeField] private Camera targetCamera;
+    public MinigameManager minigameManager;
 
     private float timer;
+    private bool isPaused = false;
+    private GameObject playerCamObject;
+    private bool previousPauseState = false; // Tracks state changes for clean debugging
 
     void Start()
     {
         timer = checkInterval;
-
+        FindPlayerCam();
     }
 
     void Update()
     {
+        // Continuously check if the PlayerCam object still exists or if its state changed
+        if (playerCamObject == null)
+        {
+            FindPlayerCam();
+        }
+        else
+        {
+            // If the camera object is inactive, pause the AI
+            bool camIsActive = playerCamObject.activeInHierarchy;
+            isPaused = !camIsActive;
+        }
+
+        // Check if our pause state just changed and log it cleanly
+        if (isPaused != previousPauseState)
+        {
+            if (isPaused)
+            {
+                Debug.Log("Creature AI: Paused (PlayerCam is disabled)");
+            }
+            else
+            {
+                Debug.Log("Creature AI: Unpaused (PlayerCam is active)");
+            }
+
+            previousPauseState = isPaused;
+        }
+
+        // If paused, don't tick down the timer
+        if (isPaused) return;
+
         timer -= Time.deltaTime;
 
         if (timer <= 0f)
         {
             PerformAIMove();
             timer = checkInterval;
+        }
+    }
+
+    private void FindPlayerCam()
+    {
+        GameObject camObj = GameObject.FindWithTag("PlayerCam");
+        if (camObj != null)
+        {
+            playerCamObject = camObj;
         }
     }
 
@@ -46,10 +89,15 @@ public class CreatureAI : MonoBehaviour
 
     private void TriggerAttack()
     {
-        // -25 hp
+        // -20 hp
         if (submarineHP != null)
         {
             submarineHP.SetHealth(-20f);
+        }
+
+        if (minigameManager != null)
+        {
+            minigameManager.ActivateRandomMinigame();
         }
 
         // Triggers cam shake
@@ -61,10 +109,9 @@ public class CreatureAI : MonoBehaviour
             }
         }
 
-        // Activates cam shake for 1 sec then deactivares
+        // Activates cam shake for 1 sec then deactivates
         if (targetCamera != null)
         {
-           
             CameraShaker camScript = targetCamera.GetComponent<CameraShaker>();
             if (camScript != null)
             {
@@ -78,7 +125,7 @@ public class CreatureAI : MonoBehaviour
         Debug.Log("Hit");
     }
 
-    // Turns and off shake script
+    // Turns on and off shake script
     private IEnumerator FlashScriptRoutine(MonoBehaviour scriptToFlash, float duration)
     {
         scriptToFlash.enabled = true;

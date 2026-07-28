@@ -8,16 +8,14 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private float interactDistance = 3f;
 
     private GameObject currentTarget;
-    private float resetTimer = 0f;
-    private float gracePeriod = 0.15f;
 
     void Update()
     {
-        HandleHover();
+        FindInteractableTarget();
         HandleInputs();
     }
 
-    private void HandleHover()
+    private void FindInteractableTarget()
     {
         Ray ray = (Cursor.lockState == CursorLockMode.Locked) ?
                 playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0)) :
@@ -26,21 +24,13 @@ public class PlayerInteraction : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, interactDistance, interactableLayer))
         {
-            Outline foundOutline = hit.collider.GetComponentInParent<Outline>();
-            if (foundOutline != null)
-            {
-                GameObject hitObject = foundOutline.gameObject;
-                if (hitObject != currentTarget)
-                {
-                    RemoveHighlight();
-                    currentTarget = hitObject;
-                }
-                resetTimer = gracePeriod;
-                AddHighlight();
-            }
-            else { HandleMissingTarget(); }
+            // Simply capture whatever interactable object we are looking at
+            currentTarget = hit.collider.gameObject;
         }
-        else { HandleMissingTarget(); }
+        else
+        {
+            currentTarget = null;
+        }
     }
 
     private void HandleInputs()
@@ -48,7 +38,7 @@ public class PlayerInteraction : MonoBehaviour
         // Only check for clicks if we are currently looking at a valid interactable object
         if (currentTarget != null)
         {
-            // Left Mouse Button Click to trigger the Electric Panel minigame/interaction
+            // Left Mouse Button Click to trigger the interaction
             if (Input.GetMouseButtonDown(0))
             {
                 Debug.Log("LMB Clicked on: " + currentTarget.name, currentTarget);
@@ -59,33 +49,14 @@ public class PlayerInteraction : MonoBehaviour
                 {
                     panel.OpenPanel();
                 }
+
+                // Check if the target has a Lever component and trigger it
+                Lever lever = currentTarget.GetComponentInParent<Lever>();
+                if (lever != null)
+                {
+                    lever.OpenPanel2();
+                }
             }
         }
-    }
-
-    private void HandleMissingTarget()
-    {
-        if (currentTarget != null)
-        {
-            resetTimer -= Time.deltaTime;
-            if (resetTimer <= 0f) { RemoveHighlight(); }
-        }
-    }
-
-    private void AddHighlight()
-    {
-        if (currentTarget == null) return;
-        Outline outline = currentTarget.GetComponentInChildren<Outline>();
-        if (outline != null) outline.OutlineWidth = 5f;
-    }
-
-    private void RemoveHighlight()
-    {
-        if (currentTarget != null)
-        {
-            Outline outline = currentTarget.GetComponentInChildren<Outline>();
-            if (outline != null) outline.OutlineWidth = 0f;
-        }
-        currentTarget = null;
     }
 }

@@ -24,7 +24,7 @@ public class ReplaceMinigame : MonoBehaviour
             if (newMinigamePrefab != null)
             {
                 Instantiate(newMinigamePrefab, spawnPosition, spawnRotation);
-                Debug.Log("Old minigame destroyed. New prefab spawned!");
+                Debug.Log("Reset");
             }
             else
             {
